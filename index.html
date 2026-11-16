@@ -20,6 +20,11 @@
     .page-image{display:block;width:100%;height:auto;background:white;box-shadow:0 10px 34px rgba(0,0,0,.075);user-select:none;-webkit-user-drag:none}
     .page-frame{max-width:595px;margin:auto;position:relative}
     .page-frame>a{display:block;cursor:zoom-in}
+    .page-frame>button{display:block;width:100%;border:0;background:none;padding:0;cursor:zoom-in}
+    .zoom-dialog{border:0;padding:0;width:min(96vw,850px);max-width:96vw;max-height:94dvh;background:white;box-shadow:0 16px 70px #0006;overflow:auto}
+    .zoom-dialog::backdrop{background:rgba(0,0,0,.82)}
+    .zoom-image{display:block;width:100%;height:auto}
+    .close-zoom{position:fixed;top:calc(14px + env(safe-area-inset-top));right:calc(14px + env(safe-area-inset-right));width:46px;height:46px;border:0;border-radius:50%;background:white;color:#111;font-size:28px;line-height:1;cursor:pointer;box-shadow:0 3px 18px #0005;z-index:12}
     .hint{text-align:center;font-size:12px;color:#777;margin:16px auto 0}
     .controls{position:fixed;bottom:0;left:0;right:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:rgba(247,246,243,.97);border-top:1px solid var(--line);z-index:10}
     .controls-inner{max-width:595px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -37,12 +42,16 @@
   <header class="topbar"><div class="brand">Casa Acaiúba</div><div class="language">English menu</div></header>
   <main class="container" id="main">
     <div class="page-frame">
-      <a id="fullImageLink" href="assets/pagina-1.png" target="_blank" rel="noopener" aria-label="Open current menu page at full size">
+      <button id="openZoom" type="button" aria-label="Enlarge the current menu page">
         <img class="page-image" id="pageImage" src="assets/pagina-1.png" alt="Casa Acaiúba menu, page 1 of 6" width="808" height="1600" fetchpriority="high">
-      </a>
+      </button>
     </div>
     <p class="hint">Tap the page to enlarge · Swipe to change pages</p>
   </main>
+  <dialog class="zoom-dialog" id="zoomDialog" aria-label="Enlarged menu page">
+    <button class="close-zoom" id="closeZoom" type="button" aria-label="Close enlarged page">×</button>
+    <img class="zoom-image" id="zoomImage" src="assets/pagina-1.png" alt="Enlarged menu page">
+  </dialog>
   <nav class="controls" aria-label="Menu page navigation">
     <div class="controls-inner">
       <button class="nav" id="previous" type="button" disabled>← Previous</button>
@@ -54,7 +63,10 @@
   <script>
     const total=6;
     const image=document.getElementById('pageImage');
-    const link=document.getElementById('fullImageLink');
+    const zoomDialog=document.getElementById('zoomDialog');
+    const zoomImage=document.getElementById('zoomImage');
+    const openZoom=document.getElementById('openZoom');
+    const closeZoom=document.getElementById('closeZoom');
     const counter=document.getElementById('counter');
     const prev=document.getElementById('previous');
     const next=document.getElementById('next');
@@ -69,17 +81,21 @@
       if(n<1||n>total)return;
       page=n;
       const src=`assets/pagina-${page}.png`;
-      image.src=src;image.alt=`Casa Acaiúba menu, page ${page} of ${total}`;link.href=src;
+      image.src=src;image.alt=`Casa Acaiúba menu, page ${page} of ${total}`;zoomImage.src=src;zoomImage.alt=`Enlarged Casa Acaiúba menu page ${page}`;
       counter.textContent=`${page} / ${total}`;prev.disabled=page===1;next.disabled=page===total;
       [...dots.children].forEach((dot,i)=>{if(i+1===page)dot.setAttribute('aria-current','page');else dot.removeAttribute('aria-current')});
       window.scrollTo({top:0,behavior:'instant'});
       if(page<total){const preload=new Image();preload.src=`assets/pagina-${page+1}.png`}
     }
     prev.addEventListener('click',()=>show(page-1));next.addEventListener('click',()=>show(page+1));
-    document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')show(page-1);if(e.key==='ArrowRight')show(page+1)});
+    openZoom.addEventListener('click',()=>{if(suppressClick){suppressClick=false;return;}zoomDialog.showModal();zoomDialog.scrollTop=0});
+    closeZoom.addEventListener('click',()=>zoomDialog.close());
+    zoomDialog.addEventListener('click',e=>{if(e.target===zoomDialog)zoomDialog.close()});
+    document.addEventListener('keydown',e=>{if(zoomDialog.open)return;if(e.key==='ArrowLeft')show(page-1);if(e.key==='ArrowRight')show(page+1)});
+    let suppressClick=false;
     let startX=0,startY=0;
     image.addEventListener('touchstart',e=>{startX=e.changedTouches[0].screenX;startY=e.changedTouches[0].screenY},{passive:true});
-    image.addEventListener('touchend',e=>{const dx=e.changedTouches[0].screenX-startX;const dy=e.changedTouches[0].screenY-startY;if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.3)show(page+(dx<0?1:-1))},{passive:true});
+    image.addEventListener('touchend',e=>{const dx=e.changedTouches[0].screenX-startX;const dy=e.changedTouches[0].screenY-startY;if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.3){suppressClick=true;show(page+(dx<0?1:-1));setTimeout(()=>suppressClick=false,400)}},{passive:true});
     show(1);
   </script>
 </body>
