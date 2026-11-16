@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f7f6f3">
+  <meta name="description" content="Casa Acaiúba — English menu">
+  <title>Casa Acaiúba | English Menu</title>
+  <style>
+    :root{color-scheme:light;--ink:#171715;--line:#dddcd7;--paper:#fff;--bg:#f7f6f3}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+    button,a{ -webkit-tap-highlight-color:transparent }
+    button:focus-visible,a:focus-visible{outline:3px solid #8b7657;outline-offset:3px}
+    .topbar{height:66px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 clamp(15px,4vw,36px);border-bottom:1px solid var(--line);background:rgba(247,246,243,.96)}
+    .brand{font-family:Georgia,'Times New Roman',serif;font-size:clamp(17px,3vw,23px);letter-spacing:.065em;text-transform:uppercase}
+    .language{font-size:11px;letter-spacing:.13em;font-weight:700;text-transform:uppercase;color:#555}
+    .container{max-width:700px;margin:0 auto;padding:24px 16px 105px}
+    .page-image{display:block;width:100%;height:auto;background:white;box-shadow:0 10px 34px rgba(0,0,0,.075);user-select:none;-webkit-user-drag:none}
+    .page-frame{max-width:595px;margin:auto;position:relative}
+    .page-frame>a{display:block;cursor:zoom-in}
+    .hint{text-align:center;font-size:12px;color:#777;margin:16px auto 0}
+    .controls{position:fixed;bottom:0;left:0;right:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:rgba(247,246,243,.97);border-top:1px solid var(--line);z-index:10}
+    .controls-inner{max-width:595px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .nav{border:1px solid #bebdb8;background:white;color:var(--ink);border-radius:30px;min-height:44px;padding:0 18px;font-size:14px;cursor:pointer}
+    .nav[disabled]{opacity:.3;cursor:default}
+    .count{font-size:13px;font-weight:700;letter-spacing:.05em;white-space:nowrap}
+    .dots{display:flex;justify-content:center;gap:9px;padding-top:12px}
+    .dot{border:0;border-radius:50%;background:#bcbab3;width:8px;height:8px;cursor:pointer;padding:0}
+    .dot[aria-current="page"]{background:#171715;transform:scale(1.35)}
+    @media(min-width:900px){.container{padding-top:35px}.topbar{height:75px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="brand">Casa Acaiúba</div><div class="language">English menu</div></header>
+  <main class="container" id="main">
+    <div class="page-frame">
+      <a id="fullImageLink" href="assets/pagina-1.png" target="_blank" rel="noopener" aria-label="Open current menu page at full size">
+        <img class="page-image" id="pageImage" src="assets/pagina-1.png" alt="Casa Acaiúba menu, page 1 of 6" width="808" height="1600" fetchpriority="high">
+      </a>
+    </div>
+    <p class="hint">Tap the page to enlarge · Swipe to change pages</p>
+  </main>
+  <nav class="controls" aria-label="Menu page navigation">
+    <div class="controls-inner">
+      <button class="nav" id="previous" type="button" disabled>← Previous</button>
+      <span class="count" id="counter" aria-live="polite">1 / 6</span>
+      <button class="nav" id="next" type="button">Next →</button>
+    </div>
+    <div class="dots" id="dots" aria-label="Choose a page"></div>
+  </nav>
+  <script>
+    const total=6;
+    const image=document.getElementById('pageImage');
+    const link=document.getElementById('fullImageLink');
+    const counter=document.getElementById('counter');
+    const prev=document.getElementById('previous');
+    const next=document.getElementById('next');
+    const dots=document.getElementById('dots');
+    let page=1;
+    for(let n=1;n<=total;n++){
+      const dot=document.createElement('button');
+      dot.className='dot';dot.type='button';dot.title=`Page ${n}`;dot.setAttribute('aria-label',`Go to page ${n}`);
+      dot.addEventListener('click',()=>show(n));dots.appendChild(dot);
+    }
+    function show(n){
+      if(n<1||n>total)return;
+      page=n;
+      const src=`assets/pagina-${page}.png`;
+      image.src=src;image.alt=`Casa Acaiúba menu, page ${page} of ${total}`;link.href=src;
+      counter.textContent=`${page} / ${total}`;prev.disabled=page===1;next.disabled=page===total;
+      [...dots.children].forEach((dot,i)=>{if(i+1===page)dot.setAttribute('aria-current','page');else dot.removeAttribute('aria-current')});
+      window.scrollTo({top:0,behavior:'instant'});
+      if(page<total){const preload=new Image();preload.src=`assets/pagina-${page+1}.png`}
+    }
+    prev.addEventListener('click',()=>show(page-1));next.addEventListener('click',()=>show(page+1));
+    document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')show(page-1);if(e.key==='ArrowRight')show(page+1)});
+    let startX=0,startY=0;
+    image.addEventListener('touchstart',e=>{startX=e.changedTouches[0].screenX;startY=e.changedTouches[0].screenY},{passive:true});
+    image.addEventListener('touchend',e=>{const dx=e.changedTouches[0].screenX-startX;const dy=e.changedTouches[0].screenY-startY;if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.3)show(page+(dx<0?1:-1))},{passive:true});
+    show(1);
+  </script>
+</body>
+</html>
